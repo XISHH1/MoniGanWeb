@@ -7,179 +7,226 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    /* Ocultar barra de scroll para un look más limpio */
+    /* Personalización de colores por CSS variables */
+    :root {
+      --color-tema: #22c55e; /* Verde por defecto */
+      --color-tema-hover: #16a34a;
+    }
+    
+    /* Clases personalizadas para usar el tema dinámico */
+    .text-tema { color: var(--color-tema) !important; }
+    .bg-tema { background-color: var(--color-tema) !important; }
+    .border-tema { border-color: var(--color-tema) !important; }
+    .shadow-tema { box-shadow: 0 4px 14px 0 rgba(0,0,0,0.1), 0 0 15px -3px var(--color-tema) !important; }
+
     ::-webkit-scrollbar { width: 8px; }
     ::-webkit-scrollbar-track { background: #0f172a; }
     ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    
+    /* Ocultar pestañas */
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    
+    /* Estilo del menú lateral activo */
+    .nav-link.active {
+      background-color: #1e293b;
+      border: 1px solid #334155;
+      color: white;
+    }
+    .nav-link.active i { color: var(--color-tema); }
   </style>
 </head>
 <body class="bg-[#0B1121] text-slate-300 font-sans h-screen flex overflow-hidden">
 
-  <!-- Sidebar (Menú lateral) -->
+  <!-- Menú lateral -->
   <aside class="w-64 bg-[#0F172A] border-r border-slate-800 flex flex-col hidden md:flex">
-    <div class="p-6 border-b border-slate-800">
-      <div class="flex items-center gap-2 text-[#22c55e] mb-2">
-        <i class="fa-solid fa-cow text-3xl"></i>
-        <span class="text-2xl font-bold text-white">Moni<span class="text-[#3b82f6]">Gan</span></span>
-      </div>
-      <p class="text-[10px] text-slate-500 flex items-center gap-1">
-        <i class="fa-solid fa-location-dot"></i> Monitoreo IoT - Santa María ⚠️
-      </p>
+    <div class="p-6 border-b border-slate-800 flex justify-center">
+      <img src="{{ url_for('static', filename='image_b5d49d.jpg') }}" alt="MoniGan Logo" class="w-40">
     </div>
     
     <nav class="flex-1 p-4 space-y-2">
-      <a href="#" class="flex items-center gap-3 bg-[#1e293b] text-white px-4 py-3 rounded-lg border border-slate-700 shadow-sm transition">
-        <i class="fa-solid fa-house text-[#22c55e]"></i>
-        <span class="font-medium">Resumen</span>
-      </a>
-      <a href="#" class="flex items-center gap-3 text-slate-400 hover:text-white hover:bg-slate-800/50 px-4 py-3 rounded-lg transition">
-        <i class="fa-solid fa-clock-rotate-left"></i>
-        <span>Historial</span>
-      </a>
-      <a href="#" class="flex items-center gap-3 text-slate-400 hover:text-white hover:bg-slate-800/50 px-4 py-3 rounded-lg transition">
-        <i class="fa-solid fa-tower-broadcast"></i>
-        <span>Dispositivos</span>
-      </a>
-      <a href="#" class="flex items-center gap-3 text-slate-400 hover:text-white hover:bg-slate-800/50 px-4 py-3 rounded-lg transition">
-        <i class="fa-solid fa-gear"></i>
-        <span>Configuración</span>
-      </a>
+      <button onclick="cambiarPestana('resumen', this)" class="nav-link active w-full flex items-center gap-3 text-slate-400 hover:text-white px-4 py-3 rounded-lg transition">
+        <i class="fa-solid fa-house"></i> <span class="font-medium">Resumen</span>
+      </button>
+      <button onclick="cambiarPestana('historial', this)" class="nav-link w-full flex items-center gap-3 text-slate-400 hover:text-white hover:bg-slate-800/50 px-4 py-3 rounded-lg transition">
+        <i class="fa-solid fa-clock-rotate-left"></i> <span>Historial</span>
+      </button>
+      <button onclick="cambiarPestana('dispositivos', this)" class="nav-link w-full flex items-center gap-3 text-slate-400 hover:text-white hover:bg-slate-800/50 px-4 py-3 rounded-lg transition">
+        <i class="fa-solid fa-tower-broadcast"></i> <span>Dispositivos</span>
+      </button>
+      <button onclick="cambiarPestana('configuracion', this)" class="nav-link w-full flex items-center gap-3 text-slate-400 hover:text-white hover:bg-slate-800/50 px-4 py-3 rounded-lg transition">
+        <i class="fa-solid fa-gear"></i> <span>Configuración</span>
+      </button>
     </nav>
     
     <div class="p-4 border-t border-slate-800">
-      <div class="flex items-center gap-2 text-sm text-slate-400">
-        <i class="fa-solid fa-wifi text-[#22c55e]"></i> Conectado <span class="w-2 h-2 rounded-full bg-[#22c55e] ml-1 animate-pulse"></span>
+      <div class="flex flex-col text-sm text-slate-400">
+        <span class="text-xs text-slate-500 mb-1">Última actualización:</span>
+        <div class="flex items-center gap-2 text-white font-medium">
+          <i class="fa-solid fa-tower-cell text-tema animate-pulse"></i> <span id="sidebar-ultima">--:--</span>
+        </div>
       </div>
     </div>
   </aside>
 
   <!-- Contenido Principal -->
   <main class="flex-1 flex flex-col h-full overflow-y-auto bg-[#0B1121]">
-    
     <!-- Navbar Superior -->
     <header class="h-20 bg-[#0F172A] border-b border-slate-800 flex items-center justify-between px-8 sticky top-0 z-10">
       <div class="flex items-center gap-3">
-        <i class="fa-solid fa-cow text-2xl text-[#3b82f6] md:hidden"></i>
-        <div>
-          <h1 class="text-xl font-bold text-white">Moni<span class="text-[#3b82f6]">Gan</span></h1>
-          <p class="text-xs text-slate-400">Monitoreo inteligente de animales</p>
+        <img src="{{ url_for('static', filename='image_b5d49d.jpg') }}" class="w-24 md:hidden">
+        <div class="hidden md:block">
+          <h1 class="text-xl font-bold text-white">Panel de Control</h1>
+          <p class="text-xs text-slate-400">Santa María, Boyacá</p>
         </div>
       </div>
       <div class="flex items-center gap-4">
-        <div class="flex items-center gap-2 bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700 cursor-pointer hover:bg-slate-700 transition">
-          <div class="w-8 h-8 rounded-full bg-slate-600 flex items-center justify-center text-white">
-            <i class="fa-solid fa-user"></i>
-          </div>
-          <span class="text-sm font-medium text-white hidden sm:block">Usuario</span>
-          <i class="fa-solid fa-chevron-down text-xs text-slate-400 ml-1 hidden sm:block"></i>
-        </div>
-        <a href="/logout" class="text-slate-400 hover:text-red-400 transition" title="Cerrar sesión">
-          <i class="fa-solid fa-arrow-right-from-bracket text-lg"></i>
+        <a href="/logout" class="bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500 hover:text-white px-4 py-2 rounded-lg transition flex items-center gap-2" title="Cerrar sesión">
+          <i class="fa-solid fa-arrow-right-from-bracket"></i> <span class="hidden sm:inline text-sm">Salir</span>
         </a>
       </div>
     </header>
 
-    <!-- Dashboard Grid -->
-    <div class="p-8 space-y-6 max-w-7xl mx-auto w-full">
+    <div class="p-8 max-w-7xl mx-auto w-full">
       
-      <!-- 4 Tarjetas de Resumen -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        
-        <!-- Tarjeta Hora -->
-        <div class="bg-[#1E293B] p-5 rounded-xl border border-slate-700 shadow-lg flex gap-4">
-          <div class="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-[#22c55e] border border-slate-600 shrink-0">
-            <i class="fa-solid fa-clock text-xl"></i>
+      <!-- ================= PESTAÑA: RESUMEN ================= -->
+      <div id="resumen" class="tab-content active space-y-6">
+        <!-- 4 Tarjetas de Resumen -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <!-- Tarjeta Hora -->
+          <div class="bg-[#1E293B] p-5 rounded-xl border border-slate-700 shadow-lg flex gap-4">
+            <div class="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-tema border border-slate-600 shrink-0"><i class="fa-solid fa-clock text-xl"></i></div>
+            <div>
+              <div class="text-sm text-slate-400 font-medium">Hora</div>
+              <div class="text-2xl font-bold text-white leading-tight mt-1" id="hora">--:--</div>
+              <div class="text-xs text-slate-500 mt-1" id="fecha">-- --- 202X</div>
+            </div>
           </div>
-          <div>
-            <div class="text-sm text-slate-400 font-medium">Hora</div>
-            <div class="text-2xl font-bold text-white leading-tight mt-1" id="hora">--:--</div>
-            <div class="text-xs text-slate-500 mt-1" id="fecha">-- --- 202X</div>
+          <!-- Tarjeta Pulso -->
+          <div class="bg-[#1E293B] p-5 rounded-xl border border-slate-700 shadow-lg flex gap-4">
+            <div class="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-blue-400 border border-slate-600 shrink-0"><i class="fa-solid fa-heart-pulse text-xl"></i></div>
+            <div>
+              <div class="text-sm text-slate-400 font-medium">Pulso</div>
+              <div class="text-2xl font-bold text-white leading-tight mt-1"><span id="pulso">0</span> <span class="text-sm text-slate-400 font-normal">bpm</span></div>
+              <div class="text-xs mt-1 flex items-center gap-1" id="pulso-status">Esperando...</div>
+            </div>
           </div>
-        </div>
-
-        <!-- Tarjeta Pulso -->
-        <div class="bg-[#1E293B] p-5 rounded-xl border border-slate-700 shadow-lg flex gap-4">
-          <div class="w-12 h-12 rounded-full bg-blue-900/40 flex items-center justify-center text-blue-400 border border-blue-800/50 shrink-0">
-            <i class="fa-solid fa-heart-pulse text-xl"></i>
+          <!-- Tarjeta Movimiento -->
+          <div class="bg-[#1E293B] p-5 rounded-xl border border-slate-700 shadow-lg flex gap-4">
+            <div class="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-tema border border-slate-600 shrink-0"><i class="fa-solid fa-person-running text-xl"></i></div>
+            <div>
+              <div class="text-sm text-slate-400 font-medium">Movimiento</div>
+              <div class="text-2xl font-bold text-white leading-tight mt-1"><span id="movimiento">0.0</span> <span class="text-sm text-slate-400 font-normal">(act)</span></div>
+              <div class="text-xs mt-1 flex items-center gap-1" id="movimiento-status">Esperando...</div>
+            </div>
           </div>
-          <div>
-            <div class="text-sm text-slate-400 font-medium">Pulso</div>
-            <div class="text-2xl font-bold text-white leading-tight mt-1"><span id="pulso">0</span> <span class="text-sm text-slate-400 font-normal">bpm</span></div>
-            <div class="text-xs mt-1 flex items-center gap-1" id="pulso-status">
-              <i class="fa-solid fa-circle text-[8px]"></i> <span>Esperando...</span>
+          <!-- Tarjeta Batería -->
+          <div class="bg-[#1E293B] p-5 rounded-xl border border-slate-700 shadow-lg flex gap-4">
+            <div class="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-blue-400 border border-slate-600 shrink-0"><i class="fa-solid fa-battery-half text-xl"></i></div>
+            <div>
+              <div class="text-sm text-slate-400 font-medium">Batería</div>
+              <div class="text-2xl font-bold text-white leading-tight mt-1" id="bateria">N/A</div>
+              <div class="text-xs text-slate-500 mt-1 flex items-center gap-1"><i class="fa-solid fa-circle text-[8px] text-slate-500"></i> Sin datos</div>
             </div>
           </div>
         </div>
 
-        <!-- Tarjeta Movimiento -->
-        <div class="bg-[#1E293B] p-5 rounded-xl border border-slate-700 shadow-lg flex gap-4">
-          <div class="w-12 h-12 rounded-full bg-green-900/40 flex items-center justify-center text-[#22c55e] border border-green-800/50 shrink-0">
-            <i class="fa-solid fa-person-running text-xl"></i>
-          </div>
-          <div>
-            <div class="text-sm text-slate-400 font-medium">Movimiento</div>
-            <div class="text-2xl font-bold text-white leading-tight mt-1"><span id="movimiento">0.0</span> <span class="text-sm text-slate-400 font-normal">(actividad)</span></div>
-            <div class="text-xs mt-1 flex items-center gap-1" id="movimiento-status">
-              <i class="fa-solid fa-circle text-[8px]"></i> <span>Esperando...</span>
+        <!-- Banner de Estado Principal -->
+        <div id="banner-estado" class="bg-[#1E293B] rounded-xl border-l-4 border-tema border-y border-r border-y-slate-700 border-r-slate-700 p-6 flex flex-col md:flex-row items-center justify-between relative overflow-hidden shadow-lg transition-all duration-500">
+          <div class="flex items-center gap-5 relative z-10 w-full">
+            <div id="icono-estado" class="w-16 h-16 rounded-full bg-tema flex items-center justify-center text-white shadow-tema shrink-0 transition-all">
+              <i class="fa-solid fa-check text-3xl"></i>
             </div>
-          </div>
-        </div>
-
-        <!-- Tarjeta Batería -->
-        <div class="bg-[#1E293B] p-5 rounded-xl border border-slate-700 shadow-lg flex gap-4">
-          <div class="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-blue-400 border border-slate-600 shrink-0">
-            <i class="fa-solid fa-battery-half text-xl"></i>
-          </div>
-          <div>
-            <div class="text-sm text-slate-400 font-medium">Batería</div>
-            <div class="text-2xl font-bold text-white leading-tight mt-1" id="bateria">N/A</div>
-            <div class="text-xs text-slate-500 mt-1 flex items-center gap-1">
-              <i class="fa-solid fa-circle text-[8px] text-slate-500"></i> Sin datos
+            <div>
+              <div class="text-sm text-slate-400 mb-1">Estado del animal</div>
+              <div id="texto-estado" class="text-3xl font-bold text-tema transition-colors">Normal</div>
+              <div class="text-sm text-slate-400 mt-2 flex items-center gap-3">
+                <span id="detalle-alerta">Pulso: -- movimiento: --</span>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Banner de Estado Principal -->
-      <div id="banner-estado" class="bg-[#1E293B] rounded-xl border-l-4 border-[#22c55e] border-y border-r border-y-slate-700 border-r-slate-700 p-6 flex flex-col md:flex-row items-center justify-between relative overflow-hidden shadow-lg transition-all duration-500">
-        
-        <!-- Contenido textual del banner -->
-        <div class="flex items-center gap-5 relative z-10 w-full">
-          <div id="icono-estado" class="w-16 h-16 rounded-full bg-[#22c55e] flex items-center justify-center text-white shadow-lg shadow-green-500/20 shrink-0 transition-all">
-            <i class="fa-solid fa-check text-3xl"></i>
+      <!-- ================= PESTAÑA: HISTORIAL ================= -->
+      <div id="historial" class="tab-content">
+        <div class="bg-[#1E293B] rounded-xl border border-slate-700 shadow-lg overflow-hidden">
+          <div class="p-6 border-b border-slate-700 flex justify-between items-center bg-slate-800/30">
+            <h2 class="text-xl font-bold text-white"><i class="fa-solid fa-list-check text-tema mr-2"></i> Últimos registros</h2>
+            <span class="text-xs text-slate-400 bg-slate-800 px-3 py-1 rounded-full border border-slate-700">Máx. 20 eventos</span>
           </div>
-          <div>
-            <div class="text-sm text-slate-400 mb-1">Estado del animal</div>
-            <div id="texto-estado" class="text-3xl font-bold text-[#22c55e] transition-colors">Normal</div>
-            <div class="text-sm text-slate-400 mt-2 flex items-center gap-3">
-              <span id="detalle-alerta">Pulso: -- movimiento: --</span>
-            </div>
-            <div class="text-xs text-slate-500 mt-1">
-              Última actualización: <span id="ultima">--</span>
-            </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-slate-400">
+              <thead class="text-xs uppercase bg-[#0F172A] text-slate-500">
+                <tr>
+                  <th class="px-6 py-4">Fecha / Hora</th>
+                  <th class="px-6 py-4">Estado</th>
+                  <th class="px-6 py-4">Pulso</th>
+                  <th class="px-6 py-4">Movimiento</th>
+                  <th class="px-6 py-4">Detalle</th>
+                </tr>
+              </thead>
+              <tbody id="tabla-historial">
+                <!-- Se llena con JS -->
+                <tr><td colspan="5" class="px-6 py-8 text-center text-slate-500">Cargando historial...</td></tr>
+              </tbody>
+            </table>
           </div>
-        </div>
-        
-        <!-- Gráfico decorativo de vacas a la derecha -->
-        <div class="hidden md:flex items-center justify-center opacity-30 right-4 absolute z-0 pointer-events-none text-[#22c55e]">
-          <i class="fa-solid fa-wifi text-4xl absolute -top-6"></i>
-          <i class="fa-solid fa-cow text-6xl mx-2"></i>
-          <i class="fa-solid fa-cow text-4xl mx-2 mt-4"></i>
         </div>
       </div>
 
-      <!-- Historial de Actividad (Placeholder como en la imagen) -->
-      <div class="bg-[#1E293B] rounded-xl border border-slate-700 p-6 shadow-lg">
-        <div class="flex justify-between items-center mb-10">
-          <h3 class="text-white font-medium flex items-center gap-2"><i class="fa-solid fa-chart-simple text-slate-400"></i> Historial de actividad</h3>
-          <button class="text-xs text-slate-300 bg-slate-800 hover:bg-slate-700 border border-slate-600 px-3 py-1.5 rounded-full transition flex items-center gap-1">
-            Ver más <i class="fa-solid fa-arrow-right"></i>
-          </button>
+      <!-- ================= PESTAÑA: DISPOSITIVOS ================= -->
+      <div id="dispositivos" class="tab-content">
+        <h2 class="text-xl font-bold text-white mb-6"><i class="fa-solid fa-microchip text-tema mr-2"></i> Dispositivos Vinculados</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <!-- Tarjeta Dispositivo 001 -->
+          <div onclick="document.querySelector('button[onclick*=\'resumen\']').click()" class="bg-[#1E293B] p-6 rounded-xl border border-slate-700 shadow-lg cursor-pointer hover:border-tema transition group relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-16 h-16 bg-tema/10 rounded-bl-full -z-0"></div>
+            <div class="flex justify-between items-start relative z-10">
+              <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-full bg-[#0F172A] border border-slate-700 flex items-center justify-center text-tema">
+                  <i class="fa-solid fa-cow text-xl"></i>
+                </div>
+                <div>
+                  <h3 class="text-lg font-bold text-white group-hover:text-tema transition">Collar 001</h3>
+                  <p class="text-xs text-slate-400">Vaca Lechera (Santa María)</p>
+                </div>
+              </div>
+              <span class="bg-green-500/20 text-green-500 text-[10px] px-2 py-1 rounded border border-green-500/30">Activo</span>
+            </div>
+            
+            <div class="mt-6 pt-4 border-t border-slate-700 flex justify-between text-xs text-slate-400">
+              <span><i class="fa-solid fa-link text-slate-500"></i> ESP32-SIM800L</span>
+              <span class="group-hover:text-tema transition">Abrir panel <i class="fa-solid fa-arrow-right"></i></span>
+            </div>
+          </div>
+
+          <!-- Botón Agregar (No funcional, diseño) -->
+          <div class="bg-[#1E293B]/50 p-6 rounded-xl border border-dashed border-slate-700 flex flex-col items-center justify-center text-slate-500 hover:text-white hover:border-slate-500 cursor-pointer transition min-h-[140px]">
+            <i class="fa-solid fa-plus text-2xl mb-2"></i>
+            <span class="text-sm font-medium">Vincular nuevo collar</span>
+          </div>
         </div>
-        <div class="flex flex-col items-center justify-center text-slate-500 py-10">
-          <i class="fa-solid fa-chart-line text-3xl mb-3 opacity-50"></i>
-          <p class="text-sm">Aquí se mostrará el historial de actividad del animal</p>
+      </div>
+
+      <!-- ================= PESTAÑA: CONFIGURACIÓN ================= -->
+      <div id="configuracion" class="tab-content">
+        <div class="bg-[#1E293B] p-8 rounded-xl border border-slate-700 shadow-lg max-w-2xl">
+          <h2 class="text-xl font-bold text-white mb-6"><i class="fa-solid fa-palette text-tema mr-2"></i> Apariencia y Tema</h2>
+          <p class="text-sm text-slate-400 mb-6">Elige el color principal de la interfaz para tu panel MoniGan.</p>
+          
+          <div class="flex flex-wrap gap-4">
+            <!-- Verde MoniGan -->
+            <button onclick="cambiarColorTema('#22c55e')" class="w-16 h-16 rounded-full bg-[#22c55e] border-4 border-[#0F172A] hover:scale-110 shadow-lg transition" title="Verde Original"></button>
+            <!-- Azul -->
+            <button onclick="cambiarColorTema('#3b82f6')" class="w-16 h-16 rounded-full bg-[#3b82f6] border-4 border-[#0F172A] hover:scale-110 shadow-lg transition" title="Azul Tecnológico"></button>
+            <!-- Naranja/Ambar -->
+            <button onclick="cambiarColorTema('#f59e0b')" class="w-16 h-16 rounded-full bg-[#f59e0b] border-4 border-[#0F172A] hover:scale-110 shadow-lg transition" title="Naranja Alerta"></button>
+            <!-- Morado -->
+            <button onclick="cambiarColorTema('#8b5cf6')" class="w-16 h-16 rounded-full bg-[#8b5cf6] border-4 border-[#0F172A] hover:scale-110 shadow-lg transition" title="Morado"></button>
+          </div>
         </div>
       </div>
 
@@ -188,84 +235,120 @@
 
   <!-- Lógica Javascript -->
   <script>
+    // 1. CARGAR TEMA GUARDADO
+    const colorGuardado = localStorage.getItem('monigan_tema') || '#22c55e';
+    document.documentElement.style.setProperty('--color-tema', colorGuardado);
+
+    function cambiarColorTema(hex) {
+      document.documentElement.style.setProperty('--color-tema', hex);
+      localStorage.setItem('monigan_tema', hex);
+    }
+
+    // 2. CAMBIAR DE PESTAÑAS (SPA Logic)
+    function cambiarPestana(id, btn) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      
+      document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active', 'bg-[#1e293b]', 'border', 'border-slate-700', 'text-white'));
+      document.querySelectorAll('.nav-link').forEach(el => el.classList.add('text-slate-400'));
+      
+      btn.classList.add('active');
+      btn.classList.remove('text-slate-400');
+    }
+
+    // 3. ACTUALIZAR DATOS DESDE EL BACKEND
     async function actualizar() {
       try {
         const res = await fetch('/api/estado');
         const data = await res.json();
         
-        // Actualizar datos básicos
-        document.getElementById('hora').innerText = data.hora;
-        document.getElementById('pulso').innerText = data.pulso;
-        document.getElementById('movimiento').innerText = data.movimiento;
-        document.getElementById('bateria').innerText = data.bateria;
-        document.getElementById('ultima').innerText = data.ultima_actualizacion;
-        document.getElementById('detalle-alerta').innerText = data.alerta === "Esperando datos..." 
-          ? `Pulso: ${data.pulso} movimiento: ${data.movimiento}` 
-          : data.alerta;
+        const actual = data.actual;
+        const historial = data.historial;
+        
+        // --- Actualizar Resumen ---
+        document.getElementById('hora').innerText = actual.hora;
+        document.getElementById('pulso').innerText = actual.pulso;
+        document.getElementById('movimiento').innerText = actual.movimiento;
+        document.getElementById('bateria').innerText = actual.bateria;
+        
+        // Parsear hora para mostrar en la barra lateral
+        if(actual.ultima_actualizacion) {
+          const uHora = actual.ultima_actualizacion.split(" ")[1];
+          document.getElementById('sidebar-ultima').innerText = uHora;
+        }
 
-        // Formatear Fecha a un estilo más legible (ej. "27 oct 2026")
-        if(data.ultima_actualizacion) {
-          const dateObj = new Date(data.ultima_actualizacion.replace(' ', 'T'));
+        document.getElementById('detalle-alerta').innerText = actual.alerta === "Esperando datos..." 
+          ? `Pulso: ${actual.pulso} movimiento: ${actual.movimiento}` 
+          : actual.alerta;
+
+        // Fecha visual
+        if(actual.ultima_actualizacion) {
+          const dateObj = new Date(actual.ultima_actualizacion.replace(' ', 'T'));
           if(!isNaN(dateObj)) {
-            const opcionesFecha = { day: 'numeric', month: 'short', year: 'numeric' };
-            document.getElementById('fecha').innerText = dateObj.toLocaleDateString('es-ES', opcionesFecha);
+            const op = { day: 'numeric', month: 'short', year: 'numeric' };
+            document.getElementById('fecha').innerText = dateObj.toLocaleDateString('es-ES', op);
           }
         }
 
-        // Lógica de colores según el Estado (Normal vs Alerta)
-        const isNormal = data.estado === 'Normal';
-        
-        // Elementos del Banner Principal
+        // Lógica de colores según Estado
         const banner = document.getElementById('banner-estado');
         const iconoEstado = document.getElementById('icono-estado');
         const textoEstado = document.getElementById('texto-estado');
-        
-        // Elementos de Tarjetas Pequeñas
         const pStatus = document.getElementById('pulso-status');
         const mStatus = document.getElementById('movimiento-status');
 
-        if (isNormal) {
-          // Diseño NORMAL (Verde)
-          banner.className = "bg-[#1E293B] rounded-xl border-l-4 border-[#22c55e] border-y border-r border-y-slate-700 border-r-slate-700 p-6 flex flex-col md:flex-row items-center justify-between relative overflow-hidden shadow-lg transition-all duration-500";
-          
-          iconoEstado.className = "w-16 h-16 rounded-full bg-[#22c55e] flex items-center justify-center text-white shadow-lg shadow-green-500/20 shrink-0 transition-all";
+        if (actual.estado === 'Normal') {
+          banner.className = "bg-[#1E293B] rounded-xl border-l-4 border-tema border-y border-r border-y-slate-700 border-r-slate-700 p-6 flex flex-col md:flex-row items-center justify-between relative overflow-hidden shadow-lg transition-all duration-500";
+          iconoEstado.className = "w-16 h-16 rounded-full bg-tema flex items-center justify-center text-white shadow-tema shrink-0 transition-all";
           iconoEstado.innerHTML = '<i class="fa-solid fa-check text-3xl"></i>';
-          
           textoEstado.innerText = "Normal";
-          textoEstado.className = "text-3xl font-bold text-[#22c55e] transition-colors";
-
-          // Tarjetas status (Verde)
-          const normalHTML = '<i class="fa-solid fa-circle text-[8px] text-[#22c55e]"></i> <span class="text-[#22c55e]">Normal</span>';
-          pStatus.innerHTML = normalHTML;
-          mStatus.innerHTML = normalHTML;
+          textoEstado.className = "text-3xl font-bold text-tema transition-colors";
+          pStatus.innerHTML = `<i class="fa-solid fa-circle text-[8px] text-tema"></i> <span class="text-tema">Normal</span>`;
+          mStatus.innerHTML = `<i class="fa-solid fa-circle text-[8px] text-tema"></i> <span class="text-tema">Normal</span>`;
         } else {
-          // Diseño ALERTA (Rojo/Naranja)
           banner.className = "bg-[#1E293B] rounded-xl border-l-4 border-red-500 border-y border-r border-y-slate-700 border-r-slate-700 p-6 flex flex-col md:flex-row items-center justify-between relative overflow-hidden shadow-lg transition-all duration-500";
-          
           iconoEstado.className = "w-16 h-16 rounded-full bg-red-500 flex items-center justify-center text-white shadow-lg shadow-red-500/20 shrink-0 transition-all animate-pulse";
           iconoEstado.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-3xl"></i>';
-          
           textoEstado.innerText = "Alerta";
           textoEstado.className = "text-3xl font-bold text-red-500 transition-colors";
-
-          // Determinar qué tarjeta causó la alerta rudimentariamente
-          if(data.alerta.toLowerCase().includes('pulso')) {
+          
+          if(actual.alerta.toLowerCase().includes('pulso')) {
              pStatus.innerHTML = '<i class="fa-solid fa-circle text-[8px] text-red-500 animate-pulse"></i> <span class="text-red-500 font-semibold">Alerta</span>';
-             mStatus.innerHTML = '<i class="fa-solid fa-circle text-[8px] text-[#22c55e]"></i> <span class="text-[#22c55e]">Normal</span>';
-          } else if(data.alerta.toLowerCase().includes('movimiento')) {
-             mStatus.innerHTML = '<i class="fa-solid fa-circle text-[8px] text-red-500 animate-pulse"></i> <span class="text-red-500 font-semibold">Alerta</span>';
-             pStatus.innerHTML = '<i class="fa-solid fa-circle text-[8px] text-[#22c55e]"></i> <span class="text-[#22c55e]">Normal</span>';
+             mStatus.innerHTML = `<i class="fa-solid fa-circle text-[8px] text-tema"></i> <span class="text-tema">Normal</span>`;
           } else {
-             pStatus.innerHTML = '<i class="fa-solid fa-circle text-[8px] text-red-500"></i> <span class="text-red-500">Revisar</span>';
-             mStatus.innerHTML = '<i class="fa-solid fa-circle text-[8px] text-red-500"></i> <span class="text-red-500">Revisar</span>';
+             mStatus.innerHTML = '<i class="fa-solid fa-circle text-[8px] text-red-500 animate-pulse"></i> <span class="text-red-500 font-semibold">Alerta</span>';
+             pStatus.innerHTML = `<i class="fa-solid fa-circle text-[8px] text-tema"></i> <span class="text-tema">Normal</span>`;
           }
         }
+
+        // --- Actualizar Historial ---
+        const tabla = document.getElementById('tabla-historial');
+        if(historial && historial.length > 0) {
+          let filasHTML = '';
+          historial.forEach(item => {
+            const esNormal = item.estado === 'Normal';
+            const colorClase = esNormal ? 'text-tema' : 'text-red-500 font-bold';
+            
+            filasHTML += `
+              <tr class="border-b border-slate-700/50 hover:bg-slate-800/30 transition">
+                <td class="px-6 py-4 font-medium text-white">${item.ultima_actualizacion}</td>
+                <td class="px-6 py-4 ${colorClase}">${item.estado}</td>
+                <td class="px-6 py-4">${item.pulso} bpm</td>
+                <td class="px-6 py-4">${item.movimiento}</td>
+                <td class="px-6 py-4 text-slate-500">${item.alerta}</td>
+              </tr>
+            `;
+          });
+          tabla.innerHTML = filasHTML;
+        } else {
+          tabla.innerHTML = '<tr><td colspan="5" class="px-6 py-8 text-center text-slate-500">Aún no hay registros en la memoria.</td></tr>';
+        }
+
       } catch (e) {
-        console.error("Error al actualizar los datos:", e);
+        console.error("Error al actualizar:", e);
       }
     }
     
-    // Ejecutar inmediatamente y luego cada 5 segundos
     actualizar();
     setInterval(actualizar, 5000);
   </script>
