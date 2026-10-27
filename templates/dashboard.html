@@ -94,11 +94,11 @@
       <div id="resumen" class="tab-content active space-y-6">
         <!-- 4 Tarjetas de Resumen -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <!-- Tarjeta Hora -->
+          <!-- Tarjeta Hora (Reloj en vivo) -->
           <div class="bg-[#1E293B] p-5 rounded-xl border border-slate-700 shadow-lg flex gap-4">
             <div class="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-tema border border-slate-600 shrink-0"><i class="fa-solid fa-clock text-xl"></i></div>
             <div>
-              <div class="text-sm text-slate-400 font-medium">Hora</div>
+              <div class="text-sm text-slate-400 font-medium">Hora Actual</div>
               <div class="text-2xl font-bold text-white leading-tight mt-1" id="hora">--:--</div>
               <div class="text-xs text-slate-500 mt-1" id="fecha">-- --- 202X</div>
             </div>
@@ -256,7 +256,16 @@
       btn.classList.remove('text-slate-400');
     }
 
-    // 3. ACTUALIZAR DATOS DESDE EL BACKEND
+    // 3. RELOJ EN VIVO PARA LA TARJETA PRINCIPAL (Hora actual de Colombia)
+    function iniciarReloj() {
+      const ahora = new Date();
+      document.getElementById('hora').innerText = ahora.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', hour12: false });
+      document.getElementById('fecha').innerText = ahora.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+    setInterval(iniciarReloj, 1000); 
+    iniciarReloj();
+
+    // 4. ACTUALIZAR DATOS DESDE EL BACKEND
     async function actualizar() {
       try {
         const res = await fetch('/api/estado');
@@ -265,32 +274,26 @@
         const actual = data.actual;
         const historial = data.historial;
         
-        // --- Actualizar Resumen ---
-        document.getElementById('hora').innerText = actual.hora;
+        // Actualizamos los datos de los sensores
         document.getElementById('pulso').innerText = actual.pulso;
         document.getElementById('movimiento').innerText = actual.movimiento;
         document.getElementById('bateria').innerText = actual.bateria;
         
-        // Parsear hora para mostrar en la barra lateral
-        if(actual.ultima_actualizacion) {
-          const uHora = actual.ultima_actualizacion.split(" ")[1];
-          document.getElementById('sidebar-ultima').innerText = uHora;
-        }
-
         document.getElementById('detalle-alerta').innerText = actual.alerta === "Esperando datos..." 
           ? `Pulso: ${actual.pulso} movimiento: ${actual.movimiento}` 
           : actual.alerta;
 
-        // Fecha visual
+        // --- CORRECCIÓN DE LA HORA DEL MENSAJE (Render UTC -> Colombia) ---
+        let horaMensajeSidebar = "--:--";
         if(actual.ultima_actualizacion) {
-          const dateObj = new Date(actual.ultima_actualizacion.replace(' ', 'T'));
-          if(!isNaN(dateObj)) {
-            const op = { day: 'numeric', month: 'short', year: 'numeric' };
-            document.getElementById('fecha').innerText = dateObj.toLocaleDateString('es-ES', op);
+          const fechaUtc = new Date(actual.ultima_actualizacion.replace(' ', 'T') + 'Z');
+          if(!isNaN(fechaUtc)) {
+            horaMensajeSidebar = fechaUtc.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
           }
         }
+        document.getElementById('sidebar-ultima').innerText = horaMensajeSidebar;
 
-        // Lógica de colores según Estado
+        // --- Lógica de colores según el Estado ---
         const banner = document.getElementById('banner-estado');
         const iconoEstado = document.getElementById('icono-estado');
         const textoEstado = document.getElementById('texto-estado');
@@ -321,7 +324,7 @@
           }
         }
 
-        // --- Actualizar Historial ---
+        // --- Actualizar Historial con Hora Corregida ---
         const tabla = document.getElementById('tabla-historial');
         if(historial && historial.length > 0) {
           let filasHTML = '';
@@ -329,9 +332,15 @@
             const esNormal = item.estado === 'Normal';
             const colorClase = esNormal ? 'text-tema' : 'text-red-500 font-bold';
             
+            let horaHistorial = item.ultima_actualizacion;
+            const fUtc = new Date(item.ultima_actualizacion.replace(' ', 'T') + 'Z');
+            if(!isNaN(fUtc)) {
+               horaHistorial = fUtc.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }) + " " + fUtc.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', hour12: false });
+            }
+            
             filasHTML += `
               <tr class="border-b border-slate-700/50 hover:bg-slate-800/30 transition">
-                <td class="px-6 py-4 font-medium text-white">${item.ultima_actualizacion}</td>
+                <td class="px-6 py-4 font-medium text-white">${horaHistorial}</td>
                 <td class="px-6 py-4 ${colorClase}">${item.estado}</td>
                 <td class="px-6 py-4">${item.pulso} bpm</td>
                 <td class="px-6 py-4">${item.movimiento}</td>
