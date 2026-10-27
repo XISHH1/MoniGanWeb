@@ -11,6 +11,7 @@ PASSWORD = "monigan@2026"
 
 BOT_TOKEN = "8938515287:AAGUFlhCWtU1SiQbjQvbJD4a69gi5Bt8eqk"
 
+# Estado actual
 datos_animal = {
     "hora": datetime.now().strftime("%H:%M"),
     "pulso": 0,
@@ -20,6 +21,9 @@ datos_animal = {
     "bateria": "N/A",
     "ultima_actualizacion": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 }
+
+# Historial para guardar los últimos registros (máx 20 para no saturar la memoria)
+historial_datos = []
 
 def login_required(f):
     @wraps(f)
@@ -55,12 +59,16 @@ def logout():
 @app.route("/api/estado")
 @login_required
 def api_estado():
-    return jsonify(datos_animal)
+    # Retornamos el estado actual y el historial completo
+    return jsonify({
+        "actual": datos_animal,
+        "historial": historial_datos
+    })
 
 # ====== TELEGRAM → PÁGINA ======
 @app.route("/telegram-webhook", methods=["POST"])
 def telegram_webhook():
-    global datos_animal
+    global datos_animal, historial_datos
     data = request.get_json(silent=True) or {}
 
     message = data.get("message") or data.get("channel_post") or {}
@@ -93,6 +101,7 @@ def telegram_webhook():
         estado = "Alerta"
         alerta = f"Movimiento intenso: {movimiento}"
 
+    # Actualizar estado global
     datos_animal = {
         "hora": hora,
         "pulso": pulso,
@@ -102,6 +111,13 @@ def telegram_webhook():
         "bateria": "N/A",
         "ultima_actualizacion": ahora
     }
+    
+    # Agregar copia al historial (al inicio de la lista)
+    historial_datos.insert(0, datos_animal.copy())
+    
+    # Mantener el historial limpio (solo los últimos 20 registros)
+    if len(historial_datos) > 20:
+        historial_datos.pop()
 
     return jsonify({"ok": True})
 
