@@ -3,46 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MoniGan - Estado del animal</title>
+  <title>MoniGan</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #0f172a;
-      color: white;
-      margin: 0;
-      padding: 20px;
-    }
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 25px;
-    }
-    h1 { color: #22c55e; margin: 0; }
-    a {
-      color: #94a3b8;
-      text-decoration: none;
-    }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 15px;
-    }
-    .card {
-      background: #1e293b;
-      padding: 20px;
-      border-radius: 12px;
-    }
-    .label { color: #94a3b8; font-size: 14px; }
-    .value { font-size: 28px; font-weight: bold; margin-top: 8px; }
-    .ok { color: #22c55e; }
-    .alerta { color: #f87171; }
-    .info {
-      margin-top: 20px;
-      background: #1e293b;
-      padding: 20px;
-      border-radius: 12px;
-    }
+    body { font-family: Arial, sans-serif; background:#0f172a; color:white; margin:0; padding:20px; }
+    .header { display:flex; justify-content:space-between; align-items:center; margin-bottom:25px; }
+    h1 { color:#22c55e; margin:0; }
+    a { color:#94a3b8; text-decoration:none; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:15px; }
+    .card { background:#1e293b; padding:20px; border-radius:12px; }
+    .label { color:#94a3b8; font-size:14px; }
+    .value { font-size:28px; font-weight:bold; margin-top:8px; }
+    .ok { color:#22c55e; }
+    .alerta { color:#f87171; }
+    .info { margin-top:20px; background:#1e293b; padding:20px; border-radius:12px; }
   </style>
 </head>
 <body>
@@ -52,33 +25,36 @@
   </div>
 
   <div class="grid">
-    <div class="card">
-      <div class="label">Hora</div>
-      <div class="value">{{ datos.hora }}</div>
-    </div>
-    <div class="card">
-      <div class="label">Pulso</div>
-      <div class="value">{{ datos.pulso }} bpm</div>
-    </div>
-    <div class="card">
-      <div class="label">Movimiento</div>
-      <div class="value">{{ datos.movimiento }}</div>
-    </div>
-    <div class="card">
-      <div class="label">Batería</div>
-      <div class="value">{{ datos.bateria }}</div>
-    </div>
+    <div class="card"><div class="label">Hora</div><div class="value" id="hora">--:--</div></div>
+    <div class="card"><div class="label">Pulso</div><div class="value"><span id="pulso">0</span> bpm</div></div>
+    <div class="card"><div class="label">Movimiento</div><div class="value" id="movimiento">0.0</div></div>
+    <div class="card"><div class="label">Batería</div><div class="value" id="bateria">N/A</div></div>
   </div>
 
   <div class="info">
     <div class="label">Estado del animal</div>
-    <div class="value {% if datos.estado == 'Normal' %}ok{% else %}alerta{% endif %}">
-      {{ datos.estado }}
-    </div>
-    <p>{{ datos.alerta }}</p>
-    <p style="color:#94a3b8; font-size:13px;">
-      Última actualización: {{ datos.ultima_actualizacion }}
-    </p>
+    <div class="value ok" id="estado">Normal</div>
+    <p id="alerta">Esperando datos...</p>
+    <p style="color:#94a3b8;font-size:13px;">Última actualización: <span id="ultima">--</span></p>
   </div>
+
+  <script>
+    async function actualizar() {
+      try {
+        const res = await fetch('/api/estado');
+        const data = await res.json();
+        document.getElementById('hora').innerText = data.hora;
+        document.getElementById('pulso').innerText = data.pulso;
+        document.getElementById('movimiento').innerText = data.movimiento;
+        document.getElementById('bateria').innerText = data.bateria;
+        document.getElementById('estado').innerText = data.estado;
+        document.getElementById('alerta').innerText = data.alerta;
+        document.getElementById('ultima').innerText = data.ultima_actualizacion;
+        document.getElementById('estado').className = data.estado === 'Normal' ? 'value ok' : 'value alerta';
+      } catch (e) {}
+    }
+    actualizar();
+    setInterval(actualizar, 5000);
+  </script>
 </body>
 </html>
