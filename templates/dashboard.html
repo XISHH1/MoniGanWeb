@@ -94,11 +94,11 @@
       <div id="resumen" class="tab-content active space-y-6">
         <!-- 4 Tarjetas de Resumen -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <!-- Tarjeta Hora (Reloj en vivo) -->
+          <!-- Tarjeta Hora (Se actualiza con el mensaje) -->
           <div class="bg-[#1E293B] p-5 rounded-xl border border-slate-700 shadow-lg flex gap-4">
             <div class="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-tema border border-slate-600 shrink-0"><i class="fa-solid fa-clock text-xl"></i></div>
             <div>
-              <div class="text-sm text-slate-400 font-medium">Hora Actual</div>
+              <div class="text-sm text-slate-400 font-medium">Hora de Recepción</div>
               <div class="text-2xl font-bold text-white leading-tight mt-1" id="hora">--:--</div>
               <div class="text-xs text-slate-500 mt-1" id="fecha">-- --- 202X</div>
             </div>
@@ -218,13 +218,9 @@
           <p class="text-sm text-slate-400 mb-6">Elige el color principal de la interfaz para tu panel MoniGan.</p>
           
           <div class="flex flex-wrap gap-4">
-            <!-- Verde MoniGan -->
             <button onclick="cambiarColorTema('#22c55e')" class="w-16 h-16 rounded-full bg-[#22c55e] border-4 border-[#0F172A] hover:scale-110 shadow-lg transition" title="Verde Original"></button>
-            <!-- Azul -->
             <button onclick="cambiarColorTema('#3b82f6')" class="w-16 h-16 rounded-full bg-[#3b82f6] border-4 border-[#0F172A] hover:scale-110 shadow-lg transition" title="Azul Tecnológico"></button>
-            <!-- Naranja/Ambar -->
             <button onclick="cambiarColorTema('#f59e0b')" class="w-16 h-16 rounded-full bg-[#f59e0b] border-4 border-[#0F172A] hover:scale-110 shadow-lg transition" title="Naranja Alerta"></button>
-            <!-- Morado -->
             <button onclick="cambiarColorTema('#8b5cf6')" class="w-16 h-16 rounded-full bg-[#8b5cf6] border-4 border-[#0F172A] hover:scale-110 shadow-lg transition" title="Morado"></button>
           </div>
         </div>
@@ -244,7 +240,7 @@
       localStorage.setItem('monigan_tema', hex);
     }
 
-    // 2. CAMBIAR DE PESTAÑAS (SPA Logic)
+    // 2. CAMBIAR DE PESTAÑAS
     function cambiarPestana(id, btn) {
       document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
       document.getElementById(id).classList.add('active');
@@ -256,16 +252,7 @@
       btn.classList.remove('text-slate-400');
     }
 
-    // 3. RELOJ EN VIVO PARA LA TARJETA PRINCIPAL (Hora actual de Colombia)
-    function iniciarReloj() {
-      const ahora = new Date();
-      document.getElementById('hora').innerText = ahora.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', hour12: false });
-      document.getElementById('fecha').innerText = ahora.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
-    }
-    setInterval(iniciarReloj, 1000); 
-    iniciarReloj();
-
-    // 4. ACTUALIZAR DATOS DESDE EL BACKEND
+    // 3. ACTUALIZAR DATOS DESDE EL BACKEND
     async function actualizar() {
       try {
         const res = await fetch('/api/estado');
@@ -274,7 +261,7 @@
         const actual = data.actual;
         const historial = data.historial;
         
-        // Actualizamos los datos de los sensores
+        // Actualizamos los sensores
         document.getElementById('pulso').innerText = actual.pulso;
         document.getElementById('movimiento').innerText = actual.movimiento;
         document.getElementById('bateria').innerText = actual.bateria;
@@ -283,14 +270,30 @@
           ? `Pulso: ${actual.pulso} movimiento: ${actual.movimiento}` 
           : actual.alerta;
 
-        // --- CORRECCIÓN DE LA HORA DEL MENSAJE (Render UTC -> Colombia) ---
+        // --- CORRECCIÓN DE LA HORA EXACTA DEL MENSAJE ---
+        // Extraemos la hora del mensaje y la convertimos a hora local forzada para Colombia
+        let horaPrincipal = "--:--";
+        let fechaPrincipal = "-- --- 202X";
         let horaMensajeSidebar = "--:--";
+
         if(actual.ultima_actualizacion) {
-          const fechaUtc = new Date(actual.ultima_actualizacion.replace(' ', 'T') + 'Z');
+          const strUtc = actual.ultima_actualizacion.replace(' ', 'T') + 'Z';
+          const fechaUtc = new Date(strUtc);
+          
           if(!isNaN(fechaUtc)) {
-            horaMensajeSidebar = fechaUtc.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+            const opHora = { timeZone: 'America/Bogota', hour: '2-digit', minute: '2-digit', hour12: false };
+            const opHoraSec = { timeZone: 'America/Bogota', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+            const opFecha = { timeZone: 'America/Bogota', day: 'numeric', month: 'short', year: 'numeric' };
+
+            horaPrincipal = fechaUtc.toLocaleTimeString('es-CO', opHora);
+            horaMensajeSidebar = fechaUtc.toLocaleTimeString('es-CO', opHoraSec);
+            fechaPrincipal = fechaUtc.toLocaleDateString('es-ES', opFecha);
           }
         }
+
+        // Aplicamos la misma hora del mensaje a todas las tarjetas
+        document.getElementById('hora').innerText = horaPrincipal;
+        document.getElementById('fecha').innerText = fechaPrincipal;
         document.getElementById('sidebar-ultima').innerText = horaMensajeSidebar;
 
         // --- Lógica de colores según el Estado ---
@@ -335,7 +338,9 @@
             let horaHistorial = item.ultima_actualizacion;
             const fUtc = new Date(item.ultima_actualizacion.replace(' ', 'T') + 'Z');
             if(!isNaN(fUtc)) {
-               horaHistorial = fUtc.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }) + " " + fUtc.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', hour12: false });
+               const dia = fUtc.toLocaleDateString('es-ES', { timeZone: 'America/Bogota', day: 'numeric', month: 'short' });
+               const hor = fUtc.toLocaleTimeString('es-CO', { timeZone: 'America/Bogota', hour: '2-digit', minute: '2-digit', hour12: false });
+               horaHistorial = dia + " " + hor;
             }
             
             filasHTML += `
