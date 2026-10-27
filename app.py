@@ -11,13 +11,13 @@ PASSWORD = "monigan@2026"
 
 BOT_TOKEN = "8938515287:AAGUFlhCWtU1SiQbjQvbJD4a69gi5Bt8eqk"
 
-# Estado actual
+# Estado actual (Inicia en pulso 0, por lo tanto "Sin señal")
 datos_animal = {
     "hora": datetime.now().strftime("%H:%M"),
     "pulso": 0,
     "movimiento": 0.0,
-    "estado": "Normal",
-    "alerta": "Esperando datos...",
+    "estado": "Alerta",
+    "alerta": "Sin señal de pulso",
     "bateria": "N/A",
     "ultima_actualizacion": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 }
@@ -81,25 +81,41 @@ def telegram_webhook():
     hora = datetime.now().strftime("%H:%M")
     ahora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    # Intentar leer números: pulso:72 movimiento:1.3
+    # Intentar leer números: pulso:72 movimiento:1.3 bateria:85
     pulso_match = re.search(r"pulso\s*[:=]?\s*(\d+)", texto_lower)
     mov_match = re.search(r"mov(?:imiento)?\s*[:=]?\s*(\d+(?:\.\d+)?)", texto_lower)
+    # Busca variaciones como: bat, bateria, batería y extrae el número
+    bat_match = re.search(r"bat(?:er[ií]a)?\s*[:=]?\s*(\d+)", texto_lower)
 
+    # Actualizar valores si vienen en el mensaje, si no, mantener los anteriores
     pulso = int(pulso_match.group(1)) if pulso_match else datos_animal["pulso"]
     movimiento = float(mov_match.group(1)) if mov_match else datos_animal["movimiento"]
+    
+    if bat_match:
+        bateria = f"{bat_match.group(1)}%"
+    else:
+        bateria = datos_animal["bateria"]
 
+    # ====== LÓGICA DE ESTADOS Y RANGOS ======
     estado = "Normal"
     alerta = texto
 
-    if pulso > 100:
+    if pulso == 0:
         estado = "Alerta"
-        alerta = f"Pulso alto: {pulso} bpm"
-    elif pulso > 0 and pulso < 40:
+        alerta = "Sin señal de pulso"
+    elif pulso > 0 and pulso < 60:
         estado = "Alerta"
         alerta = f"Pulso bajo: {pulso} bpm"
+    elif pulso > 100:
+        estado = "Alerta"
+        alerta = f"Pulso alto: {pulso} bpm"
     elif movimiento > 1.8:
         estado = "Alerta"
         alerta = f"Movimiento intenso: {movimiento}"
+    else:
+        # Si está entre 60 y 100 y el movimiento es normal
+        estado = "Normal"
+        alerta = f"Pulso y actividad normales"
 
     # Actualizar estado global
     datos_animal = {
@@ -108,7 +124,7 @@ def telegram_webhook():
         "movimiento": movimiento,
         "estado": estado,
         "alerta": alerta,
-        "bateria": "N/A",
+        "bateria": bateria,
         "ultima_actualizacion": ahora
     }
     
