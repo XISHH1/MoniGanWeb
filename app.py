@@ -1,7 +1,6 @@
 from flask import Flask, render_template, request, redirect, session, url_for, jsonify
 from functools import wraps
 from datetime import datetime
-import requests
 import re
 
 app = Flask(__name__)
