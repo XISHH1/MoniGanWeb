@@ -5,65 +5,98 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MoniGan - Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Configuración para activar el modo oscuro manual -->
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+    }
+  </script>
+
+  <!-- Script que lee el modo guardado antes de que cargue la página para evitar parpadeos -->
+  <script>
+    const modoOscuroGuardado = localStorage.getItem('monigan_modo_oscuro');
+    if (modoOscuroGuardado === 'false') {
+      document.documentElement.classList.remove('dark');
+    } else {
+      document.documentElement.classList.add('dark'); // Oscuro por defecto
+    }
+  </script>
+
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     /* Personalización de colores por CSS variables */
     :root {
-      --color-tema: #22c55e; /* Verde por defecto */
-      --color-tema-hover: #16a34a;
+      --color-tema: #22c55e;
     }
     
-    /* Clases personalizadas para usar el tema dinámico */
     .text-tema { color: var(--color-tema) !important; }
     .bg-tema { background-color: var(--color-tema) !important; }
     .border-tema { border-color: var(--color-tema) !important; }
     .shadow-tema { box-shadow: 0 4px 14px 0 rgba(0,0,0,0.1), 0 0 15px -3px var(--color-tema) !important; }
 
     ::-webkit-scrollbar { width: 8px; }
-    ::-webkit-scrollbar-track { background: #0f172a; }
-    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
-    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    .dark ::-webkit-scrollbar-thumb { background: #334155; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    .dark ::-webkit-scrollbar-thumb:hover { background: #475569; }
     
     /* Ocultar pestañas */
     .tab-content { display: none; }
     .tab-content.active { display: block; }
     
-    /* Estilo del menú lateral activo */
+    /* Estilos del menú lateral */
+    .nav-link { color: #64748b; }
+    .dark .nav-link { color: #94a3b8; }
+    .nav-link:hover { color: #0f172a; background-color: #f1f5f9; }
+    .dark .nav-link:hover { color: #ffffff; background-color: rgba(30, 41, 59, 0.5); }
+    
+    /* Pestaña Activa Modo Claro */
     .nav-link.active {
+      background-color: #ffffff;
+      border: 1px solid #e2e8f0;
+      color: #0f172a;
+      font-weight: 600;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    /* Pestaña Activa Modo Oscuro */
+    .dark .nav-link.active {
       background-color: #1e293b;
       border: 1px solid #334155;
       color: white;
+      box-shadow: none;
     }
     .nav-link.active i { color: var(--color-tema); }
   </style>
 </head>
-<body class="bg-[#0B1121] text-slate-300 font-sans h-screen flex overflow-hidden">
+<body class="bg-slate-50 dark:bg-[#0B1121] text-slate-600 dark:text-slate-300 font-sans h-screen flex overflow-hidden transition-colors duration-300">
 
   <!-- Menú lateral -->
-  <aside class="w-64 bg-[#0F172A] border-r border-slate-800 flex flex-col hidden md:flex">
-    <div class="p-6 border-b border-slate-800 flex justify-center">
-      <img src="{{ url_for('static', filename='image_b5d49d.jpg') }}" alt="MoniGan Logo" class="w-40">
+  <aside class="w-64 bg-white dark:bg-[#0F172A] border-r border-slate-200 dark:border-slate-800 flex flex-col hidden md:flex transition-colors duration-300">
+    <div class="p-6 border-b border-slate-200 dark:border-slate-800 flex justify-center">
+      <img src="{{ url_for('static', filename='image_b5d49d.jpg') }}" alt="MoniGan Logo" class="w-40 rounded">
     </div>
     
     <nav class="flex-1 p-4 space-y-2">
-      <button onclick="cambiarPestana('resumen', this)" class="nav-link active w-full flex items-center gap-3 text-slate-400 hover:text-white px-4 py-3 rounded-lg transition">
-        <i class="fa-solid fa-house"></i> <span class="font-medium">Resumen</span>
+      <button onclick="cambiarPestana('resumen', this)" class="nav-link active w-full flex items-center gap-3 px-4 py-3 rounded-lg transition">
+        <i class="fa-solid fa-house"></i> <span>Resumen</span>
       </button>
-      <button onclick="cambiarPestana('historial', this)" class="nav-link w-full flex items-center gap-3 text-slate-400 hover:text-white hover:bg-slate-800/50 px-4 py-3 rounded-lg transition">
+      <button onclick="cambiarPestana('historial', this)" class="nav-link w-full flex items-center gap-3 px-4 py-3 rounded-lg transition">
         <i class="fa-solid fa-clock-rotate-left"></i> <span>Historial</span>
       </button>
-      <button onclick="cambiarPestana('dispositivos', this)" class="nav-link w-full flex items-center gap-3 text-slate-400 hover:text-white hover:bg-slate-800/50 px-4 py-3 rounded-lg transition">
+      <button onclick="cambiarPestana('dispositivos', this)" class="nav-link w-full flex items-center gap-3 px-4 py-3 rounded-lg transition">
         <i class="fa-solid fa-tower-broadcast"></i> <span>Dispositivos</span>
       </button>
-      <button onclick="cambiarPestana('configuracion', this)" class="nav-link w-full flex items-center gap-3 text-slate-400 hover:text-white hover:bg-slate-800/50 px-4 py-3 rounded-lg transition">
+      <button onclick="cambiarPestana('configuracion', this)" class="nav-link w-full flex items-center gap-3 px-4 py-3 rounded-lg transition">
         <i class="fa-solid fa-gear"></i> <span>Configuración</span>
       </button>
     </nav>
     
-    <div class="p-4 border-t border-slate-800">
-      <div class="flex flex-col text-sm text-slate-400">
-        <span class="text-xs text-slate-500 mb-1">Última actualización:</span>
-        <div class="flex items-center gap-2 text-white font-medium">
+    <div class="p-4 border-t border-slate-200 dark:border-slate-800">
+      <div class="flex flex-col text-sm text-slate-500 dark:text-slate-400">
+        <span class="text-xs mb-1">Última actualización:</span>
+        <div class="flex items-center gap-2 text-slate-900 dark:text-white font-medium">
           <i class="fa-solid fa-tower-cell text-tema animate-pulse"></i> <span id="sidebar-ultima">--:--</span>
         </div>
       </div>
@@ -71,19 +104,19 @@
   </aside>
 
   <!-- Contenido Principal -->
-  <main class="flex-1 flex flex-col h-full overflow-y-auto bg-[#0B1121]">
+  <main class="flex-1 flex flex-col h-full overflow-y-auto bg-slate-50 dark:bg-[#0B1121] transition-colors duration-300">
     <!-- Navbar Superior -->
-    <header class="h-20 bg-[#0F172A] border-b border-slate-800 flex items-center justify-between px-8 sticky top-0 z-10">
+    <header class="h-20 bg-white dark:bg-[#0F172A] border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-8 sticky top-0 z-10 transition-colors duration-300">
       <div class="flex items-center gap-3">
-        <img src="{{ url_for('static', filename='image_b5d49d.jpg') }}" class="w-24 md:hidden">
+        <img src="{{ url_for('static', filename='image_b5d49d.jpg') }}" class="w-24 rounded md:hidden">
         <div class="hidden md:block">
-          <h1 class="text-xl font-bold text-white">Panel de Control</h1>
-          <p class="text-xs text-slate-400">Santa María, Boyacá</p>
+          <h1 class="text-xl font-bold text-slate-900 dark:text-white">Panel de Control</h1>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Santa María, Boyacá</p>
         </div>
       </div>
       <div class="flex items-center gap-4">
-        <a href="/logout" class="bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500 hover:text-white px-4 py-2 rounded-lg transition flex items-center gap-2" title="Cerrar sesión">
-          <i class="fa-solid fa-arrow-right-from-bracket"></i> <span class="hidden sm:inline text-sm">Salir</span>
+        <a href="/logout" class="bg-red-50 dark:bg-red-500/10 text-red-500 dark:text-red-400 border border-red-200 dark:border-red-500/20 hover:bg-red-500 hover:text-white px-4 py-2 rounded-lg transition flex items-center gap-2" title="Cerrar sesión">
+          <i class="fa-solid fa-arrow-right-from-bracket"></i> <span class="hidden sm:inline text-sm font-medium">Salir</span>
         </a>
       </div>
     </header>
@@ -94,56 +127,56 @@
       <div id="resumen" class="tab-content active space-y-6">
         <!-- 4 Tarjetas de Resumen -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <!-- Tarjeta Hora (Se actualiza con el mensaje) -->
-          <div class="bg-[#1E293B] p-5 rounded-xl border border-slate-700 shadow-lg flex gap-4">
-            <div class="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-tema border border-slate-600 shrink-0"><i class="fa-solid fa-clock text-xl"></i></div>
+          <!-- Tarjeta Hora -->
+          <div class="bg-white dark:bg-[#1E293B] p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm dark:shadow-lg flex gap-4 transition-colors">
+            <div class="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-tema border border-slate-200 dark:border-slate-600 shrink-0"><i class="fa-solid fa-clock text-xl"></i></div>
             <div>
-              <div class="text-sm text-slate-400 font-medium">Hora de Recepción</div>
-              <div class="text-2xl font-bold text-white leading-tight mt-1" id="hora">--:--</div>
-              <div class="text-xs text-slate-500 mt-1" id="fecha">-- --- 202X</div>
+              <div class="text-sm text-slate-500 dark:text-slate-400 font-medium">Hora de Recepción</div>
+              <div class="text-2xl font-bold text-slate-900 dark:text-white leading-tight mt-1" id="hora">--:--</div>
+              <div class="text-xs text-slate-400 dark:text-slate-500 mt-1" id="fecha">-- --- 202X</div>
             </div>
           </div>
           <!-- Tarjeta Pulso -->
-          <div class="bg-[#1E293B] p-5 rounded-xl border border-slate-700 shadow-lg flex gap-4">
-            <div class="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-blue-400 border border-slate-600 shrink-0"><i class="fa-solid fa-heart-pulse text-xl"></i></div>
+          <div class="bg-white dark:bg-[#1E293B] p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm dark:shadow-lg flex gap-4 transition-colors">
+            <div class="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-blue-500 dark:text-blue-400 border border-slate-200 dark:border-slate-600 shrink-0"><i class="fa-solid fa-heart-pulse text-xl"></i></div>
             <div>
-              <div class="text-sm text-slate-400 font-medium">Pulso</div>
-              <div class="text-2xl font-bold text-white leading-tight mt-1"><span id="pulso">0</span> <span class="text-sm text-slate-400 font-normal">bpm</span></div>
+              <div class="text-sm text-slate-500 dark:text-slate-400 font-medium">Pulso</div>
+              <div class="text-2xl font-bold text-slate-900 dark:text-white leading-tight mt-1"><span id="pulso">0</span> <span class="text-sm text-slate-400 font-normal">bpm</span></div>
               <div class="text-xs mt-1 flex items-center gap-1" id="pulso-status">Esperando...</div>
             </div>
           </div>
           <!-- Tarjeta Movimiento -->
-          <div class="bg-[#1E293B] p-5 rounded-xl border border-slate-700 shadow-lg flex gap-4">
-            <div class="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-tema border border-slate-600 shrink-0"><i class="fa-solid fa-person-running text-xl"></i></div>
+          <div class="bg-white dark:bg-[#1E293B] p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm dark:shadow-lg flex gap-4 transition-colors">
+            <div class="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-tema border border-slate-200 dark:border-slate-600 shrink-0"><i class="fa-solid fa-person-running text-xl"></i></div>
             <div>
-              <div class="text-sm text-slate-400 font-medium">Movimiento</div>
-              <div class="text-2xl font-bold text-white leading-tight mt-1"><span id="movimiento">0.0</span> <span class="text-sm text-slate-400 font-normal">(act)</span></div>
+              <div class="text-sm text-slate-500 dark:text-slate-400 font-medium">Movimiento</div>
+              <div class="text-2xl font-bold text-slate-900 dark:text-white leading-tight mt-1"><span id="movimiento">0.0</span> <span class="text-sm text-slate-400 font-normal">(act)</span></div>
               <div class="text-xs mt-1 flex items-center gap-1" id="movimiento-status">Esperando...</div>
             </div>
           </div>
           <!-- Tarjeta Batería -->
-          <div class="bg-[#1E293B] p-5 rounded-xl border border-slate-700 shadow-lg flex gap-4">
-            <div class="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-blue-400 border border-slate-600 shrink-0"><i class="fa-solid fa-battery-half text-xl"></i></div>
+          <div class="bg-white dark:bg-[#1E293B] p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm dark:shadow-lg flex gap-4 transition-colors">
+            <div class="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-blue-500 dark:text-blue-400 border border-slate-200 dark:border-slate-600 shrink-0"><i class="fa-solid fa-battery-half text-xl"></i></div>
             <div>
-              <div class="text-sm text-slate-400 font-medium">Batería</div>
-              <div class="text-2xl font-bold text-white leading-tight mt-1" id="bateria">N/A</div>
+              <div class="text-sm text-slate-500 dark:text-slate-400 font-medium">Batería</div>
+              <div class="text-2xl font-bold text-slate-900 dark:text-white leading-tight mt-1" id="bateria">N/A</div>
               <div class="text-xs mt-1 flex items-center gap-1" id="bateria-status">
-                <i class="fa-solid fa-circle text-[8px] text-slate-500"></i> <span class="text-slate-500">Sin datos</span>
+                <i class="fa-solid fa-circle text-[8px] text-slate-400 dark:text-slate-500"></i> <span class="text-slate-500">Sin datos</span>
               </div>
             </div>
           </div>
         </div>
 
         <!-- Banner de Estado Principal -->
-        <div id="banner-estado" class="bg-[#1E293B] rounded-xl border-l-4 border-tema border-y border-r border-y-slate-700 border-r-slate-700 p-6 flex flex-col md:flex-row items-center justify-between relative overflow-hidden shadow-lg transition-all duration-500">
+        <div id="banner-estado" class="bg-white dark:bg-[#1E293B] rounded-xl border-l-4 border-tema border-y border-r border-y-slate-200 dark:border-y-slate-700 border-r-slate-200 dark:border-r-slate-700 p-6 flex flex-col md:flex-row items-center justify-between relative overflow-hidden shadow-sm dark:shadow-lg transition-all duration-500">
           <div class="flex items-center gap-5 relative z-10 w-full">
             <div id="icono-estado" class="w-16 h-16 rounded-full bg-tema flex items-center justify-center text-white shadow-tema shrink-0 transition-all">
               <i class="fa-solid fa-check text-3xl"></i>
             </div>
             <div>
-              <div class="text-sm text-slate-400 mb-1">Estado del animal</div>
+              <div class="text-sm text-slate-500 dark:text-slate-400 mb-1">Estado del animal</div>
               <div id="texto-estado" class="text-3xl font-bold text-tema transition-colors">Normal</div>
-              <div class="text-sm text-slate-400 mt-2 flex items-center gap-3">
+              <div class="text-sm text-slate-500 dark:text-slate-400 mt-2 flex items-center gap-3">
                 <span id="detalle-alerta">Pulso: -- movimiento: --</span>
               </div>
             </div>
@@ -153,14 +186,14 @@
 
       <!-- ================= PESTAÑA: HISTORIAL ================= -->
       <div id="historial" class="tab-content">
-        <div class="bg-[#1E293B] rounded-xl border border-slate-700 shadow-lg overflow-hidden">
-          <div class="p-6 border-b border-slate-700 flex justify-between items-center bg-slate-800/30">
-            <h2 class="text-xl font-bold text-white"><i class="fa-solid fa-list-check text-tema mr-2"></i> Últimos registros</h2>
-            <span class="text-xs text-slate-400 bg-slate-800 px-3 py-1 rounded-full border border-slate-700">Máx. 20 eventos</span>
+        <div class="bg-white dark:bg-[#1E293B] rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm dark:shadow-lg overflow-hidden transition-colors">
+          <div class="p-6 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-800/30">
+            <h2 class="text-xl font-bold text-slate-900 dark:text-white"><i class="fa-solid fa-list-check text-tema mr-2"></i> Últimos registros</h2>
+            <span class="text-xs text-slate-600 dark:text-slate-400 bg-slate-200 dark:bg-slate-800 px-3 py-1 rounded-full border border-slate-300 dark:border-slate-700 font-medium">Máx. 20 eventos</span>
           </div>
           <div class="overflow-x-auto">
-            <table class="w-full text-left text-sm text-slate-400">
-              <thead class="text-xs uppercase bg-[#0F172A] text-slate-500">
+            <table class="w-full text-left text-sm text-slate-600 dark:text-slate-400">
+              <thead class="text-xs uppercase bg-slate-50 dark:bg-[#0F172A] text-slate-500 border-b border-slate-200 dark:border-slate-700">
                 <tr>
                   <th class="px-6 py-4">Fecha / Hora</th>
                   <th class="px-6 py-4">Estado</th>
@@ -180,33 +213,33 @@
 
       <!-- ================= PESTAÑA: DISPOSITIVOS ================= -->
       <div id="dispositivos" class="tab-content">
-        <h2 class="text-xl font-bold text-white mb-6"><i class="fa-solid fa-microchip text-tema mr-2"></i> Dispositivos Vinculados</h2>
+        <h2 class="text-xl font-bold text-slate-900 dark:text-white mb-6"><i class="fa-solid fa-microchip text-tema mr-2"></i> Dispositivos Vinculados</h2>
         
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
           <!-- Tarjeta Dispositivo 001 -->
-          <div onclick="document.querySelector('button[onclick*=\'resumen\']').click()" class="bg-[#1E293B] p-6 rounded-xl border border-slate-700 shadow-lg cursor-pointer hover:border-tema transition group relative overflow-hidden">
+          <div onclick="document.querySelector('button[onclick*=\'resumen\']').click()" class="bg-white dark:bg-[#1E293B] p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm dark:shadow-lg cursor-pointer hover:border-tema transition group relative overflow-hidden">
             <div class="absolute top-0 right-0 w-16 h-16 bg-tema/10 rounded-bl-full -z-0"></div>
             <div class="flex justify-between items-start relative z-10">
               <div class="flex items-center gap-4">
-                <div class="w-12 h-12 rounded-full bg-[#0F172A] border border-slate-700 flex items-center justify-center text-tema">
+                <div class="w-12 h-12 rounded-full bg-slate-50 dark:bg-[#0F172A] border border-slate-200 dark:border-slate-700 flex items-center justify-center text-tema">
                   <i class="fa-solid fa-cow text-xl"></i>
                 </div>
                 <div>
-                  <h3 class="text-lg font-bold text-white group-hover:text-tema transition">Collar 001</h3>
-                  <p class="text-xs text-slate-400">Vaca Lechera (Santa María)</p>
+                  <h3 class="text-lg font-bold text-slate-900 dark:text-white group-hover:text-tema transition">Collar 001</h3>
+                  <p class="text-xs text-slate-500 dark:text-slate-400">Vaca Lechera (Santa María)</p>
                 </div>
               </div>
-              <span class="bg-green-500/20 text-green-500 text-[10px] px-2 py-1 rounded border border-green-500/30">Activo</span>
+              <span class="bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-500 text-[10px] px-2 py-1 rounded border border-green-200 dark:border-green-500/30 font-medium">Activo</span>
             </div>
             
-            <div class="mt-6 pt-4 border-t border-slate-700 flex justify-between text-xs text-slate-400">
-              <span><i class="fa-solid fa-link text-slate-500"></i> ESP32-SIM800L</span>
-              <span class="group-hover:text-tema transition">Abrir panel <i class="fa-solid fa-arrow-right"></i></span>
+            <div class="mt-6 pt-4 border-t border-slate-200 dark:border-slate-700 flex justify-between text-xs text-slate-500 dark:text-slate-400">
+              <span><i class="fa-solid fa-link text-slate-400 dark:text-slate-500"></i> ESP32-SIM800L</span>
+              <span class="group-hover:text-tema transition font-medium">Abrir panel <i class="fa-solid fa-arrow-right"></i></span>
             </div>
           </div>
 
-          <!-- Botón Agregar (No funcional, diseño) -->
-          <div class="bg-[#1E293B]/50 p-6 rounded-xl border border-dashed border-slate-700 flex flex-col items-center justify-center text-slate-500 hover:text-white hover:border-slate-500 cursor-pointer transition min-h-[140px]">
+          <!-- Botón Agregar -->
+          <div class="bg-slate-50 dark:bg-[#1E293B]/50 p-6 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 flex flex-col items-center justify-center text-slate-500 hover:text-slate-900 dark:hover:text-white hover:border-slate-400 dark:hover:border-slate-500 cursor-pointer transition min-h-[140px]">
             <i class="fa-solid fa-plus text-2xl mb-2"></i>
             <span class="text-sm font-medium">Vincular nuevo collar</span>
           </div>
@@ -215,15 +248,30 @@
 
       <!-- ================= PESTAÑA: CONFIGURACIÓN ================= -->
       <div id="configuracion" class="tab-content">
-        <div class="bg-[#1E293B] p-8 rounded-xl border border-slate-700 shadow-lg max-w-2xl">
-          <h2 class="text-xl font-bold text-white mb-6"><i class="fa-solid fa-palette text-tema mr-2"></i> Apariencia y Tema</h2>
-          <p class="text-sm text-slate-400 mb-6">Elige el color principal de la interfaz para tu panel MoniGan.</p>
+        <div class="bg-white dark:bg-[#1E293B] p-8 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm dark:shadow-lg max-w-2xl transition-colors">
+          
+          <!-- SECCIÓN: MODO CLARO / OSCURO -->
+          <h2 class="text-xl font-bold text-slate-900 dark:text-white mb-4"><i class="fa-solid fa-moon text-tema mr-2"></i> Modo de Pantalla</h2>
+          <div class="flex gap-4 mb-10">
+            <button onclick="setModoOscuro(false)" id="btn-light" class="flex-1 py-3 rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold hover:border-tema transition flex items-center justify-center gap-2">
+              <i class="fa-solid fa-sun text-yellow-500"></i> Claro
+            </button>
+            <button onclick="setModoOscuro(true)" id="btn-dark" class="flex-1 py-3 rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold hover:border-tema transition flex items-center justify-center gap-2">
+              <i class="fa-solid fa-moon text-blue-400"></i> Oscuro
+            </button>
+          </div>
+
+          <hr class="border-slate-200 dark:border-slate-700 mb-8">
+
+          <!-- SECCIÓN: COLOR PRINCIPAL -->
+          <h2 class="text-xl font-bold text-slate-900 dark:text-white mb-2"><i class="fa-solid fa-palette text-tema mr-2"></i> Tema de Color</h2>
+          <p class="text-sm text-slate-500 dark:text-slate-400 mb-6">Elige el color principal de la interfaz para tu panel MoniGan.</p>
           
           <div class="flex flex-wrap gap-4">
-            <button onclick="cambiarColorTema('#22c55e')" class="w-16 h-16 rounded-full bg-[#22c55e] border-4 border-[#0F172A] hover:scale-110 shadow-lg transition" title="Verde Original"></button>
-            <button onclick="cambiarColorTema('#3b82f6')" class="w-16 h-16 rounded-full bg-[#3b82f6] border-4 border-[#0F172A] hover:scale-110 shadow-lg transition" title="Azul Tecnológico"></button>
-            <button onclick="cambiarColorTema('#f59e0b')" class="w-16 h-16 rounded-full bg-[#f59e0b] border-4 border-[#0F172A] hover:scale-110 shadow-lg transition" title="Naranja Alerta"></button>
-            <button onclick="cambiarColorTema('#8b5cf6')" class="w-16 h-16 rounded-full bg-[#8b5cf6] border-4 border-[#0F172A] hover:scale-110 shadow-lg transition" title="Morado"></button>
+            <button onclick="cambiarColorTema('#22c55e')" class="w-16 h-16 rounded-full bg-[#22c55e] border-4 border-white dark:border-[#0F172A] hover:scale-110 shadow-lg transition" title="Verde Original"></button>
+            <button onclick="cambiarColorTema('#3b82f6')" class="w-16 h-16 rounded-full bg-[#3b82f6] border-4 border-white dark:border-[#0F172A] hover:scale-110 shadow-lg transition" title="Azul Tecnológico"></button>
+            <button onclick="cambiarColorTema('#f59e0b')" class="w-16 h-16 rounded-full bg-[#f59e0b] border-4 border-white dark:border-[#0F172A] hover:scale-110 shadow-lg transition" title="Naranja Alerta"></button>
+            <button onclick="cambiarColorTema('#8b5cf6')" class="w-16 h-16 rounded-full bg-[#8b5cf6] border-4 border-white dark:border-[#0F172A] hover:scale-110 shadow-lg transition" title="Morado"></button>
           </div>
         </div>
       </div>
@@ -233,7 +281,7 @@
 
   <!-- Lógica Javascript -->
   <script>
-    // 1. CARGAR TEMA GUARDADO
+    // 1. CARGAR TEMA DE COLOR GUARDADO
     const colorGuardado = localStorage.getItem('monigan_tema') || '#22c55e';
     document.documentElement.style.setProperty('--color-tema', colorGuardado);
 
@@ -242,19 +290,52 @@
       localStorage.setItem('monigan_tema', hex);
     }
 
-    // 2. CAMBIAR DE PESTAÑAS
+    // 2. FUNCIÓN PARA CAMBIAR MODO CLARO / OSCURO
+    function setModoOscuro(esOscuro) {
+      const btnLight = document.getElementById('btn-light');
+      const btnDark = document.getElementById('btn-dark');
+      
+      if (esOscuro) {
+        document.documentElement.classList.add('dark');
+        localStorage.setItem('monigan_modo_oscuro', 'true');
+      } else {
+        document.documentElement.classList.remove('dark');
+        localStorage.setItem('monigan_modo_oscuro', 'false');
+      }
+      actualizarBotonesModo();
+    }
+
+    // Actualiza el aspecto de los botones según el modo activo
+    function actualizarBotonesModo() {
+      const isDark = document.documentElement.classList.contains('dark');
+      const btnLight = document.getElementById('btn-light');
+      const btnDark = document.getElementById('btn-dark');
+      
+      if(isDark) {
+        btnDark.classList.add('border-tema', 'text-white');
+        btnDark.classList.remove('border-slate-200', 'dark:border-slate-700', 'text-slate-700', 'dark:text-slate-300');
+        btnLight.classList.remove('border-tema', 'text-slate-900');
+        btnLight.classList.add('border-slate-200', 'dark:border-slate-700', 'text-slate-700', 'dark:text-slate-300');
+      } else {
+        btnLight.classList.add('border-tema', 'text-slate-900');
+        btnLight.classList.remove('border-slate-200', 'dark:border-slate-700', 'text-slate-700', 'dark:text-slate-300');
+        btnDark.classList.remove('border-tema', 'text-white');
+        btnDark.classList.add('border-slate-200', 'dark:border-slate-700', 'text-slate-700', 'dark:text-slate-300');
+      }
+    }
+    // Ejecutar al iniciar para colorear el botón correcto
+    actualizarBotonesModo();
+
+    // 3. CAMBIAR DE PESTAÑAS
     function cambiarPestana(id, btn) {
       document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
       document.getElementById(id).classList.add('active');
       
-      document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active', 'bg-[#1e293b]', 'border', 'border-slate-700', 'text-white'));
-      document.querySelectorAll('.nav-link').forEach(el => el.classList.add('text-slate-400'));
-      
+      document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
       btn.classList.add('active');
-      btn.classList.remove('text-slate-400');
     }
 
-    // 3. ACTUALIZAR DATOS DESDE EL BACKEND
+    // 4. ACTUALIZAR DATOS DESDE EL BACKEND
     async function actualizar() {
       try {
         const res = await fetch('/api/estado');
@@ -292,7 +373,6 @@
           }
         }
 
-        // Aplicamos la misma hora del mensaje a todas las tarjetas
         document.getElementById('hora').innerText = horaPrincipal;
         document.getElementById('fecha').innerText = fechaPrincipal;
         document.getElementById('sidebar-ultima').innerText = horaMensajeSidebar;
@@ -302,66 +382,66 @@
         const iconoEstado = document.getElementById('icono-estado');
         const textoEstado = document.getElementById('texto-estado');
         
-        // Etiquetas individuales
         const pStatus = document.getElementById('pulso-status');
         const mStatus = document.getElementById('movimiento-status');
         const bStatus = document.getElementById('bateria-status');
 
-        // Evaluar Estado Global (Banner) y las tarjetas de pulso/movimiento
+        const baseBanner = "bg-white dark:bg-[#1E293B] rounded-xl border-l-4 border-y border-r border-y-slate-200 dark:border-y-slate-700 border-r-slate-200 dark:border-r-slate-700 p-6 flex flex-col md:flex-row items-center justify-between relative overflow-hidden shadow-sm dark:shadow-lg transition-all duration-500 ";
+
         if (actual.estado === 'Normal') {
-          banner.className = "bg-[#1E293B] rounded-xl border-l-4 border-tema border-y border-r border-y-slate-700 border-r-slate-700 p-6 flex flex-col md:flex-row items-center justify-between relative overflow-hidden shadow-lg transition-all duration-500";
+          banner.className = baseBanner + "border-tema";
           iconoEstado.className = "w-16 h-16 rounded-full bg-tema flex items-center justify-center text-white shadow-tema shrink-0 transition-all";
           iconoEstado.innerHTML = '<i class="fa-solid fa-check text-3xl"></i>';
           textoEstado.innerText = "Normal";
           textoEstado.className = "text-3xl font-bold text-tema transition-colors";
           
-          pStatus.innerHTML = `<i class="fa-solid fa-circle text-[8px] text-tema"></i> <span class="text-tema">Normal</span>`;
-          mStatus.innerHTML = `<i class="fa-solid fa-circle text-[8px] text-tema"></i> <span class="text-tema">Normal</span>`;
+          pStatus.innerHTML = `<i class="fa-solid fa-circle text-[8px] text-tema"></i> <span class="text-tema font-medium">Normal</span>`;
+          mStatus.innerHTML = `<i class="fa-solid fa-circle text-[8px] text-tema"></i> <span class="text-tema font-medium">Normal</span>`;
         } else {
-          banner.className = "bg-[#1E293B] rounded-xl border-l-4 border-red-500 border-y border-r border-y-slate-700 border-r-slate-700 p-6 flex flex-col md:flex-row items-center justify-between relative overflow-hidden shadow-lg transition-all duration-500";
+          banner.className = baseBanner + "border-red-500";
           iconoEstado.className = "w-16 h-16 rounded-full bg-red-500 flex items-center justify-center text-white shadow-lg shadow-red-500/20 shrink-0 transition-all animate-pulse";
           iconoEstado.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-3xl"></i>';
           textoEstado.innerText = "Alerta";
           textoEstado.className = "text-3xl font-bold text-red-500 transition-colors";
           
           if(actual.alerta.toLowerCase().includes('pulso') || actual.alerta.toLowerCase().includes('sensores')) {
-             pStatus.innerHTML = '<i class="fa-solid fa-circle text-[8px] text-red-500 animate-pulse"></i> <span class="text-red-500 font-semibold">Alerta</span>';
+             pStatus.innerHTML = '<i class="fa-solid fa-circle text-[8px] text-red-500 animate-pulse"></i> <span class="text-red-500 font-bold">Alerta</span>';
              if(!actual.alerta.toLowerCase().includes('sensores')) {
-                mStatus.innerHTML = `<i class="fa-solid fa-circle text-[8px] text-tema"></i> <span class="text-tema">Normal</span>`;
+                mStatus.innerHTML = `<i class="fa-solid fa-circle text-[8px] text-tema"></i> <span class="text-tema font-medium">Normal</span>`;
              }
           } 
           
           if(actual.alerta.toLowerCase().includes('movimiento') || actual.alerta.toLowerCase().includes('sensores')) {
-             mStatus.innerHTML = '<i class="fa-solid fa-circle text-[8px] text-red-500 animate-pulse"></i> <span class="text-red-500 font-semibold">Alerta</span>';
+             mStatus.innerHTML = '<i class="fa-solid fa-circle text-[8px] text-red-500 animate-pulse"></i> <span class="text-red-500 font-bold">Alerta</span>';
              if(!actual.alerta.toLowerCase().includes('sensores')) {
-                pStatus.innerHTML = `<i class="fa-solid fa-circle text-[8px] text-tema"></i> <span class="text-tema">Normal</span>`;
+                pStatus.innerHTML = `<i class="fa-solid fa-circle text-[8px] text-tema"></i> <span class="text-tema font-medium">Normal</span>`;
              }
           }
         }
 
-        // Evaluar Estado individual de la Batería
+        // Batería
         if (actual.bateria && actual.bateria !== "N/A") {
           const batVal = parseInt(actual.bateria.replace('%', ''));
           if (!isNaN(batVal)) {
             if (batVal < 20) {
-              bStatus.innerHTML = '<i class="fa-solid fa-circle text-[8px] text-red-500 animate-pulse"></i> <span class="text-red-500 font-semibold">Baja</span>';
+              bStatus.innerHTML = '<i class="fa-solid fa-circle text-[8px] text-red-500 animate-pulse"></i> <span class="text-red-500 font-bold">Baja</span>';
             } else if (batVal > 80) {
-              bStatus.innerHTML = '<i class="fa-solid fa-circle text-[8px] text-red-500 animate-pulse"></i> <span class="text-red-500 font-semibold">Alta</span>';
+              bStatus.innerHTML = '<i class="fa-solid fa-circle text-[8px] text-red-500 animate-pulse"></i> <span class="text-red-500 font-bold">Alta</span>';
             } else {
-              bStatus.innerHTML = `<i class="fa-solid fa-circle text-[8px] text-tema"></i> <span class="text-tema">Normal</span>`;
+              bStatus.innerHTML = `<i class="fa-solid fa-circle text-[8px] text-tema"></i> <span class="text-tema font-medium">Normal</span>`;
             }
           }
         } else {
-          bStatus.innerHTML = '<i class="fa-solid fa-circle text-[8px] text-slate-500"></i> <span class="text-slate-500">Sin datos</span>';
+          bStatus.innerHTML = '<i class="fa-solid fa-circle text-[8px] text-slate-400 dark:text-slate-500"></i> <span class="text-slate-500 dark:text-slate-400 font-medium">Sin datos</span>';
         }
 
-        // --- Actualizar Historial con Hora Corregida ---
+        // --- Actualizar Historial ---
         const tabla = document.getElementById('tabla-historial');
         if(historial && historial.length > 0) {
           let filasHTML = '';
           historial.forEach(item => {
             const esNormal = item.estado === 'Normal';
-            const colorClase = esNormal ? 'text-tema' : 'text-red-500 font-bold';
+            const colorClase = esNormal ? 'text-tema font-medium' : 'text-red-500 font-bold';
             
             let horaHistorial = item.ultima_actualizacion;
             const fUtc = new Date(item.ultima_actualizacion.replace(' ', 'T') + 'Z');
@@ -372,18 +452,18 @@
             }
             
             filasHTML += `
-              <tr class="border-b border-slate-700/50 hover:bg-slate-800/30 transition">
-                <td class="px-6 py-4 font-medium text-white">${horaHistorial}</td>
+              <tr class="border-b border-slate-200 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                <td class="px-6 py-4 font-medium text-slate-800 dark:text-white">${horaHistorial}</td>
                 <td class="px-6 py-4 ${colorClase}">${item.estado}</td>
                 <td class="px-6 py-4">${item.pulso} bpm</td>
                 <td class="px-6 py-4">${item.movimiento}</td>
-                <td class="px-6 py-4 text-slate-500">${item.alerta}</td>
+                <td class="px-6 py-4 text-slate-500 dark:text-slate-400">${item.alerta}</td>
               </tr>
             `;
           });
           tabla.innerHTML = filasHTML;
         } else {
-          tabla.innerHTML = '<tr><td colspan="5" class="px-6 py-8 text-center text-slate-500">Aún no hay registros en la memoria.</td></tr>';
+          tabla.innerHTML = '<tr><td colspan="5" class="px-6 py-8 text-center text-slate-500 dark:text-slate-400">Aún no hay registros en la memoria.</td></tr>';
         }
 
       } catch (e) {
