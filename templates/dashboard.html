@@ -127,7 +127,9 @@
             <div>
               <div class="text-sm text-slate-400 font-medium">Batería</div>
               <div class="text-2xl font-bold text-white leading-tight mt-1" id="bateria">N/A</div>
-              <div class="text-xs text-slate-500 mt-1 flex items-center gap-1"><i class="fa-solid fa-circle text-[8px] text-slate-500"></i> Sin datos</div>
+              <div class="text-xs mt-1 flex items-center gap-1" id="bateria-status">
+                <i class="fa-solid fa-circle text-[8px] text-slate-500"></i> <span class="text-slate-500">Sin datos</span>
+              </div>
             </div>
           </div>
         </div>
@@ -271,7 +273,6 @@
           : actual.alerta;
 
         // --- CORRECCIÓN DE LA HORA EXACTA DEL MENSAJE ---
-        // Extraemos la hora del mensaje y la convertimos a hora local forzada para Colombia
         let horaPrincipal = "--:--";
         let fechaPrincipal = "-- --- 202X";
         let horaMensajeSidebar = "--:--";
@@ -300,15 +301,20 @@
         const banner = document.getElementById('banner-estado');
         const iconoEstado = document.getElementById('icono-estado');
         const textoEstado = document.getElementById('texto-estado');
+        
+        // Etiquetas individuales
         const pStatus = document.getElementById('pulso-status');
         const mStatus = document.getElementById('movimiento-status');
+        const bStatus = document.getElementById('bateria-status');
 
+        // Evaluar Estado Global (Banner) y las tarjetas de pulso/movimiento
         if (actual.estado === 'Normal') {
           banner.className = "bg-[#1E293B] rounded-xl border-l-4 border-tema border-y border-r border-y-slate-700 border-r-slate-700 p-6 flex flex-col md:flex-row items-center justify-between relative overflow-hidden shadow-lg transition-all duration-500";
           iconoEstado.className = "w-16 h-16 rounded-full bg-tema flex items-center justify-center text-white shadow-tema shrink-0 transition-all";
           iconoEstado.innerHTML = '<i class="fa-solid fa-check text-3xl"></i>';
           textoEstado.innerText = "Normal";
           textoEstado.className = "text-3xl font-bold text-tema transition-colors";
+          
           pStatus.innerHTML = `<i class="fa-solid fa-circle text-[8px] text-tema"></i> <span class="text-tema">Normal</span>`;
           mStatus.innerHTML = `<i class="fa-solid fa-circle text-[8px] text-tema"></i> <span class="text-tema">Normal</span>`;
         } else {
@@ -318,13 +324,35 @@
           textoEstado.innerText = "Alerta";
           textoEstado.className = "text-3xl font-bold text-red-500 transition-colors";
           
-          if(actual.alerta.toLowerCase().includes('pulso')) {
+          if(actual.alerta.toLowerCase().includes('pulso') || actual.alerta.toLowerCase().includes('sensores')) {
              pStatus.innerHTML = '<i class="fa-solid fa-circle text-[8px] text-red-500 animate-pulse"></i> <span class="text-red-500 font-semibold">Alerta</span>';
-             mStatus.innerHTML = `<i class="fa-solid fa-circle text-[8px] text-tema"></i> <span class="text-tema">Normal</span>`;
-          } else {
+             if(!actual.alerta.toLowerCase().includes('sensores')) {
+                mStatus.innerHTML = `<i class="fa-solid fa-circle text-[8px] text-tema"></i> <span class="text-tema">Normal</span>`;
+             }
+          } 
+          
+          if(actual.alerta.toLowerCase().includes('movimiento') || actual.alerta.toLowerCase().includes('sensores')) {
              mStatus.innerHTML = '<i class="fa-solid fa-circle text-[8px] text-red-500 animate-pulse"></i> <span class="text-red-500 font-semibold">Alerta</span>';
-             pStatus.innerHTML = `<i class="fa-solid fa-circle text-[8px] text-tema"></i> <span class="text-tema">Normal</span>`;
+             if(!actual.alerta.toLowerCase().includes('sensores')) {
+                pStatus.innerHTML = `<i class="fa-solid fa-circle text-[8px] text-tema"></i> <span class="text-tema">Normal</span>`;
+             }
           }
+        }
+
+        // Evaluar Estado individual de la Batería
+        if (actual.bateria && actual.bateria !== "N/A") {
+          const batVal = parseInt(actual.bateria.replace('%', ''));
+          if (!isNaN(batVal)) {
+            if (batVal < 20) {
+              bStatus.innerHTML = '<i class="fa-solid fa-circle text-[8px] text-red-500 animate-pulse"></i> <span class="text-red-500 font-semibold">Baja</span>';
+            } else if (batVal > 80) {
+              bStatus.innerHTML = '<i class="fa-solid fa-circle text-[8px] text-red-500 animate-pulse"></i> <span class="text-red-500 font-semibold">Alta</span>';
+            } else {
+              bStatus.innerHTML = `<i class="fa-solid fa-circle text-[8px] text-tema"></i> <span class="text-tema">Normal</span>`;
+            }
+          }
+        } else {
+          bStatus.innerHTML = '<i class="fa-solid fa-circle text-[8px] text-slate-500"></i> <span class="text-slate-500">Sin datos</span>';
         }
 
         // --- Actualizar Historial con Hora Corregida ---
