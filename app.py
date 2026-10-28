@@ -2,6 +2,8 @@ from flask import Flask, render_template, request, redirect, session, url_for, j
 from functools import wraps
 from datetime import datetime
 import re
+import json
+import os
 
 app = Flask(__name__)
 app.secret_key = "monigan_secret_key_2026"
@@ -11,8 +13,11 @@ PASSWORD = "monigan@2026"
 
 BOT_TOKEN = "8938515287:AAGUFlhCWtU1SiQbjQvbJD4a69gi5Bt8eqk"
 
-# Estado actual (Inicia en pulso 0 y mov 0, por lo tanto "Sin señal")
-datos_animal = {
+# Archivo donde se guardará la memoria permanentemente
+ARCHIVO_DATOS = "datos_monigan.json"
+
+# Estado por defecto (en caso de que el archivo no exista aún)
+estado_por_defecto = {
     "hora": datetime.now().strftime("%H:%M"),
     "pulso": 0,
     "movimiento": 0.0,
@@ -22,8 +27,30 @@ datos_animal = {
     "ultima_actualizacion": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 }
 
-# Historial para guardar los últimos registros (máx 20 para no saturar la memoria)
-historial_datos = []
+def cargar_memoria():
+    """Lee el archivo JSON para recuperar los datos guardados"""
+    if os.path.exists(ARCHIVO_DATOS):
+        try:
+            with open(ARCHIVO_DATOS, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                return data.get("actual", estado_por_defecto.copy()), data.get("historial", [])
+        except Exception as e:
+            print(f"Error al leer la memoria: {e}")
+    return estado_por_defecto.copy(), []
+
+def guardar_memoria():
+    """Guarda el estado actual y el historial en el archivo JSON"""
+    try:
+        with open(ARCHIVO_DATOS, 'w', encoding='utf-8') as f:
+            json.dump({
+                "actual": datos_animal,
+                "historial": historial_datos
+            }, f, ensure_ascii=False, indent=4)
+    except Exception as e:
+        print(f"Error al guardar la memoria: {e}")
+
+# Cargar los datos nada más encender el servidor
+datos_animal, historial_datos = cargar_memoria()
 
 def login_required(f):
     @wraps(f)
@@ -59,7 +86,7 @@ def logout():
 @app.route("/api/estado")
 @login_required
 def api_estado():
-    # Retornamos el estado actual y el historial completo
+    # Retornamos la memoria cargada
     return jsonify({
         "actual": datos_animal,
         "historial": historial_datos
@@ -81,24 +108,25 @@ def telegram_webhook():
     hora = datetime.now().strftime("%H:%M")
     ahora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    # Intentar leer números: pulso:72 movimiento:1.3 bateria:85
+    # Extraer valores
     pulso_match = re.search(r"pulso\s*[:=]?\s*(\d+)", texto_lower)
     mov_match = re.search(r"mov(?:imiento)?\s*[:=]?\s*(\d+(?:\.\d+)?)", texto_lower)
     bat_match = re.search(r"bat(?:er[ií]a)?\s*[:=]?\s*(\d+)", texto_lower)
 
-    # Actualizar valores si vienen en el mensaje, si no, mantener los anteriores
+    # Actualizar valores
     pulso = int(pulso_match.group(1)) if pulso_match else datos_animal["pulso"]
     movimiento = float(mov_match.group(1)) if mov_match else datos_animal["movimiento"]
     
-    # Manejo numérico de la batería para poder evaluarla
     if bat_match:
         bat_val = int(bat_match.group(1))
         bateria_str = f"{bat_val}%"
     else:
         bateria_str = datos_animal["bateria"]
-        # Si ya hay un porcentaje guardado de un mensaje anterior, extraemos el número
         if bateria_str != "N/A":
-            bat_val = int(bateria_str.replace('%', ''))
+            try:
+                bat_val = int(bateria_str.replace('%', ''))
+            except:
+                bat_val = None
         else:
             bat_val = None
 
@@ -106,7 +134,6 @@ def telegram_webhook():
     estado = "Normal"
     alerta = texto
 
-    # 1. Prioridad: Salud y conexión (Pulso y Movimiento)
     if pulso == 0 and movimiento == 0:
         estado = "Alerta"
         alerta = "Sin señal de sensores"
@@ -125,16 +152,12 @@ def telegram_webhook():
     elif movimiento >= 1.8:
         estado = "Alerta"
         alerta = f"Movimiento intenso: {movimiento}"
-    
-    # 2. Prioridad secundaria: Batería (solo evalúa si pulso y mov están bien)
     elif bat_val is not None and bat_val < 20:
         estado = "Alerta"
         alerta = f"Batería baja: {bat_val}%"
     elif bat_val is not None and bat_val > 80:
         estado = "Alerta"
         alerta = f"Batería alta: {bat_val}%"
-        
-    # 3. Todo está dentro de los rangos normales (Pulso 60-100, Mov 0.1-1.7, Bat 20-80)
     else:
         estado = "Normal"
         alerta = f"Parámetros y batería normales"
@@ -150,12 +173,13 @@ def telegram_webhook():
         "ultima_actualizacion": ahora
     }
     
-    # Agregar copia al historial (al inicio de la lista)
+    # Agregar copia al historial
     historial_datos.insert(0, datos_animal.copy())
-    
-    # Mantener el historial limpio (solo los últimos 20 registros)
     if len(historial_datos) > 20:
         historial_datos.pop()
+
+    # === AQUÍ GUARDAMOS TODO EN EL ARCHIVO ===
+    guardar_memoria()
 
     return jsonify({"ok": True})
 
