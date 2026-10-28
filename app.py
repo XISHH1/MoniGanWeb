@@ -11,13 +11,13 @@ PASSWORD = "monigan@2026"
 
 BOT_TOKEN = "8938515287:AAGUFlhCWtU1SiQbjQvbJD4a69gi5Bt8eqk"
 
-# Estado actual (Inicia en pulso 0, por lo tanto "Sin señal")
+# Estado actual (Inicia en pulso 0 y mov 0, por lo tanto "Sin señal")
 datos_animal = {
     "hora": datetime.now().strftime("%H:%M"),
     "pulso": 0,
     "movimiento": 0.0,
     "estado": "Alerta",
-    "alerta": "Sin señal de pulso",
+    "alerta": "Sin señal de sensores",
     "bateria": "N/A",
     "ultima_actualizacion": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 }
@@ -84,38 +84,60 @@ def telegram_webhook():
     # Intentar leer números: pulso:72 movimiento:1.3 bateria:85
     pulso_match = re.search(r"pulso\s*[:=]?\s*(\d+)", texto_lower)
     mov_match = re.search(r"mov(?:imiento)?\s*[:=]?\s*(\d+(?:\.\d+)?)", texto_lower)
-    # Busca variaciones como: bat, bateria, batería y extrae el número
     bat_match = re.search(r"bat(?:er[ií]a)?\s*[:=]?\s*(\d+)", texto_lower)
 
     # Actualizar valores si vienen en el mensaje, si no, mantener los anteriores
     pulso = int(pulso_match.group(1)) if pulso_match else datos_animal["pulso"]
     movimiento = float(mov_match.group(1)) if mov_match else datos_animal["movimiento"]
     
+    # Manejo numérico de la batería para poder evaluarla
     if bat_match:
-        bateria = f"{bat_match.group(1)}%"
+        bat_val = int(bat_match.group(1))
+        bateria_str = f"{bat_val}%"
     else:
-        bateria = datos_animal["bateria"]
+        bateria_str = datos_animal["bateria"]
+        # Si ya hay un porcentaje guardado de un mensaje anterior, extraemos el número
+        if bateria_str != "N/A":
+            bat_val = int(bateria_str.replace('%', ''))
+        else:
+            bat_val = None
 
     # ====== LÓGICA DE ESTADOS Y RANGOS ======
     estado = "Normal"
     alerta = texto
 
-    if pulso == 0:
+    # 1. Prioridad: Salud y conexión (Pulso y Movimiento)
+    if pulso == 0 and movimiento == 0:
+        estado = "Alerta"
+        alerta = "Sin señal de sensores"
+    elif pulso == 0:
         estado = "Alerta"
         alerta = "Sin señal de pulso"
-    elif pulso > 0 and pulso < 60:
+    elif movimiento == 0:
+        estado = "Alerta"
+        alerta = "Sin señal de movimiento"
+    elif pulso < 60:
         estado = "Alerta"
         alerta = f"Pulso bajo: {pulso} bpm"
     elif pulso > 100:
         estado = "Alerta"
         alerta = f"Pulso alto: {pulso} bpm"
-    elif movimiento > 1.8:
+    elif movimiento >= 1.8:
         estado = "Alerta"
         alerta = f"Movimiento intenso: {movimiento}"
+    
+    # 2. Prioridad secundaria: Batería (solo evalúa si pulso y mov están bien)
+    elif bat_val is not None and bat_val < 20:
+        estado = "Alerta"
+        alerta = f"Batería baja: {bat_val}%"
+    elif bat_val is not None and bat_val > 80:
+        estado = "Alerta"
+        alerta = f"Batería alta: {bat_val}%"
+        
+    # 3. Todo está dentro de los rangos normales (Pulso 60-100, Mov 0.1-1.7, Bat 20-80)
     else:
-        # Si está entre 60 y 100 y el movimiento es normal
         estado = "Normal"
-        alerta = f"Pulso y actividad normales"
+        alerta = f"Parámetros y batería normales"
 
     # Actualizar estado global
     datos_animal = {
@@ -124,7 +146,7 @@ def telegram_webhook():
         "movimiento": movimiento,
         "estado": estado,
         "alerta": alerta,
-        "bateria": bateria,
+        "bateria": bateria_str,
         "ultima_actualizacion": ahora
     }
     
